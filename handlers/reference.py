@@ -43,13 +43,28 @@ async def reference_link_call(call: types.CallbackQuery):
         )
         await bot.send_message(
             chat_id=call.from_user.id,
-            text=f"Here is your new link: {link}"
+            text=f"Вот ваша новая ссылка: {link}"
         )
     else:
         await bot.send_message(
             chat_id=call.from_user.id,
-            text=f"Here is your database link: {user['link']}"
+            text=f"Вот ссылка на вашу базу данных: {user['link']}"
         )
+
+
+async def reference_list_call(call: types.CallbackQuery):
+    db = Database()
+    user = db.sql_select_user(
+        telegram_id=call.from_user.id
+    )
+    if user:
+        await bot.send_message(
+            chat_id=call.from_user.id,
+            text=user
+        )
+    else:
+        await bot.send_message(chat_id=call.from_user.id,
+                               text="нет пользователя")
 
 
 def register_reference_handlers(dp: Dispatcher):
@@ -57,14 +72,56 @@ def register_reference_handlers(dp: Dispatcher):
                                        lambda call: call.data == "reference_menu")
     dp.register_callback_query_handler(reference_link_call,
                                        lambda call: call.data == "reference_link")
+    dp.register_callback_query_handler(reference_list_call,
+                                       lambda call: call.data == "reference_list")
 
-async def reference_balance_call(call: types.CallbackQuery):
-    db = Database()
-    user_id = call.from_user.id
-    balance_data = db.sql_select_wallet_balance(user_id)
+
+async def send_money_call(call: types.CallbackQuery):
     await bot.send_message(
         chat_id=call.from_user.id,
-        text=f"Your wallet balance: {balance_data['balance']} points",
+        text="Enter recipient's username or first name:"
+    )
+    dp.register_message_handler(send_money, lambda message: message.from_user.id == call.from_user.id)
+
+
+dp.register_callback_query_handler(send_money_call, lambda call: call.data == "send_money")
+
+
+async def send_money(message: types.Message):
+    recipient_username = message.text.strip()
+    sender_id = message.from_user.id
+
+    db = Database()
+
+    sender_balance = db.sql_get_wallet_balance(sender_id)['balance']
+
+    if sender_balance < 100:
+        await bot.send_message(
+            chat_id=message.from_user.id,
+            text="You don't have enough balance to send money."
+        )
+        return
+
+    recipient_id = db.sql_select_user_by_username_or_first_name(recipient_username)
+
+    if not recipient_id:
+        await bot.send_message(
+            chat_id=message.from_user.id,
+            text=f"User '{recipient_username}' not found."
+        )
+        return
+
+    amount = 100
+    recipient_id = recipient_id['telegram_id']
+
+    db.sql_insert_transaction(sender_id, recipient_id, amount)
+
+    db.sql_update_wallet_balance(sender_id, sender_balance - amount)
+    db.sql_update_wallet_balance(recipient_id, db.sql_get_wallet_balance(recipient_id)['balance'] + amount)
+
+    await bot.send_message(
+        chat_id=message.from_user.id,
+        text=f"You have successfully sent {amount} points to {recipient_username}."
     )
 
-dp.register_callback_query_handler(reference_balance_call, lambda call: call.data == "reference_balance")
+    dp.unregister_message_handler(send_money)

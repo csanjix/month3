@@ -122,8 +122,10 @@ async def reference_menu_keyboard():
     reference_button = InlineKeyboardButton("Reference Link 🔗", callback_data="reference_link")
     reference_list_button = InlineKeyboardButton("Reference List 🔥", callback_data="reference_list")
     balance_button = InlineKeyboardButton("Balance 💰", callback_data="reference_balance")
+    send_money_button = InlineKeyboardButton("Send Money 💸", callback_data="send_money")
 
     markup.add(reference_button)
     markup.add(reference_list_button)
     markup.add(balance_button)
+    markup.add(send_money_button)
     return markup
