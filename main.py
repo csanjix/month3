@@ -1,16 +1,28 @@
-# This is a sample Python script.
+from aiogram import executor
+from config import dp
+from handlers import (
+    start,
+    call_back,
+    chat_actions,
+    registration,
+    profile,
+    reference
+)
+from database import sql_commands
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+async def on_startup(_):
+    db = sql_commands.Database()
+    db.sql_create_tables()
+start.register_start_handlers(dp=dp)
+call_back.register_callback_handlers(dp=dp)
+registration.register_registration_handlers(dp=dp)
+profile.register_profile_handlers(dp=dp)
+reference.register_reference_handlers(dp=dp)
+chat_actions.register_chat_actions_handlers(dp=dp)
 
-
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
-
-
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+if __name__ == "__main__":
+    executor.start_polling(
+        dp,
+        skip_updates=True,
+        on_startup=on_startup
+    )
