@@ -168,3 +168,17 @@ class Database:
                 self.cursor.row_factory = lambda cursor, row: {"balance": row[0]}
                 return self.cursor.execute(sql_queries.SELECT_WALLET_AMOUNT_QUERY, (tg_id,)).fetchone()
             self.connection.commit()
+
+            def sql_insert_transaction(self, sender_id, recipient_id, amount):
+                self.cursor.execute(sql_queries.INSERT_TRANSACTION_QUERY, (sender_id, recipient_id, amount))
+                self.connection.commit()
+
+            def sql_select_wallet_balance_by_username(self, username):
+                self.cursor.row_factory = lambda cursor, row: {"balance": row[0]}
+                return self.cursor.execute(sql_queries.SELECT_WALLET_BALANCE_BY_USERNAME_QUERY,
+                                           (username, username)).fetchone()
+
+            def sql_update_balance(self, sender_tg_id, recipient_tg_id, amount):
+                self.cursor.execute(sql_queries.UPDATE_WALLET_DECREMENT_QUERY, (amount, sender_tg_id))
+                self.cursor.execute(sql_queries.UPDATE_WALLET_INCREMENT_QUERY, (amount, recipient_tg_id))
+                self.connection.commit()

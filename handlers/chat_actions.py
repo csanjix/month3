@@ -14,10 +14,6 @@ async def chat_messages(message: types.Message):
         ban_word_predict_prob = predict_prob([message.text])
         if ban_word_predict_prob > 0.1:
             await message.delete()
-            # await bot.delete_message(
-            #     chat_id=message.chat.id,
-            #     message_id=message.message_id
-            # )
             user = db.sql_select_ban_user(
                 telegram_id=message.from_user.id
             )
@@ -25,7 +21,6 @@ async def chat_messages(message: types.Message):
                 chat_id=message.chat.id,
                 text=f"User: {message.from_user.id} {message.from_user.first_name}\n"
                      f"НЕ РУГАЙТЕСЬ В ЭТОМ ЧАТЕ\n"
-                     # f"ВЫ ОГРАНИЧИЛИ: {user['count']}\n"
                      f"В ТРЕТИЙ РАЗ ТЕБЯ ЗАБАНЯТ"
             )
             print(user)
@@ -46,13 +41,11 @@ async def chat_messages(message: types.Message):
                     chat_id=message.chat.id,
                     user_id=message.from_user.id,
                     until_date=datetime.datetime.now() + datetime.timedelta(minutes=10)
-                    # until_date=datetime.datetime.now() + datetime.timedelta(minutes=10)
                 )
             elif user:
                 db.sql_update_ban_users_count(
                     telegram_id=message.from_user.id
                 )
-            # await bot.ban_chat_member()
     else:
         await message.reply(
             text="Нет такой команды"
